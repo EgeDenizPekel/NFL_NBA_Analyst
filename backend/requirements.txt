@@ -1,0 +1,18 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+httpx>=0.27.0
+python-dotenv>=1.0.0
+nba_api>=1.4.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+nfl_data_py>=0.3.0
+# pandas: nfl_data_py requires <2.0; nba_api declares >=2.1 but works on 1.5.x.
+# Pin to <2.0 to satisfy nfl_data_py. nba_api static data + endpoints work fine.
+pandas>=1.0.0,<2.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.14.0
