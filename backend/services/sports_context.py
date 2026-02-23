@@ -30,7 +30,8 @@ NFL_KEYWORDS = {
 COMPARISON_KEYWORDS = {"compare", "vs", "versus", "better than", "comparison", "between"}
 SCOREBOARD_KEYWORDS = {"today", "tonight", "score", "scores", "scoreboard", "live", "playing today"}
 STANDINGS_KEYWORDS  = {"standing", "standings", "record", "conference", "division", "playoff", "ranked"}
-LEADERS_KEYWORDS    = {"leader", "leaders", "top scorer", "top scorers", "who leads", "most points",
+LEADERS_KEYWORDS    = {"leader", "leaders", "top scorer", "top scorers", "top shooter", "top shooters",
+                       "best shooter", "best shooters", "who leads", "most points",
                        "most rebounds", "most assists", "most yards", "most touchdowns", "most tds",
                        "top qb", "top quarterback", "top receiver", "top rusher"}
 STATS_KEYWORDS      = {"stats", "stat", "average", "averaging", "points", "rebounds", "assists",
@@ -123,6 +124,11 @@ class SportsContextService:
     def _detect_intent(self, message: str) -> str:
         if any(kw in message for kw in COMPARISON_KEYWORDS):
             return "comparison"
+        # STANDINGS before SCOREBOARD: "standings today" should fetch standings,
+        # not today's scoreboard. Standing keywords are specific enough that they
+        # won't accidentally match pure scoreboard queries.
+        if any(kw in message for kw in STANDINGS_KEYWORDS):
+            return "standings"
         if any(kw in message for kw in SCOREBOARD_KEYWORDS):
             return "scoreboard"
         # PREDICTION before NEWS: prediction queries often contain news-adjacent words
@@ -132,8 +138,6 @@ class SportsContextService:
             return "prediction"
         if any(kw in message for kw in NEWS_KEYWORDS):
             return "news"
-        if any(kw in message for kw in STANDINGS_KEYWORDS):
-            return "standings"
         if any(kw in message for kw in LEADERS_KEYWORDS):
             return "leaders"
         return "player_stats"

@@ -83,6 +83,27 @@ class TestDetectIntent:
     def test_default_player_stats(self, svc):
         assert svc._detect_intent("how is jayson tatum playing this season") == "player_stats"
 
+    # Regression: "today" must not override an explicit standings keyword
+    def test_standings_beats_scoreboard_today(self, svc):
+        assert svc._detect_intent("nba standings today") == "standings"
+
+    def test_nfl_standings_beats_scoreboard_today(self, svc):
+        assert svc._detect_intent("nfl standings today") == "standings"
+
+    # Regression: "top shooters" should map to leaders, not fall through to player_stats
+    def test_top_shooters_leaders(self, svc):
+        assert svc._detect_intent("who are the top shooters this season") == "leaders"
+
+    def test_best_shooters_leaders(self, svc):
+        assert svc._detect_intent("best shooters in the nba") == "leaders"
+
+    # Scoreboard-only queries must still work after the standings/scoreboard swap
+    def test_scoreboard_tonight(self, svc):
+        assert svc._detect_intent("what games are on tonight") == "scoreboard"
+
+    def test_scoreboard_live(self, svc):
+        assert svc._detect_intent("live score updates") == "scoreboard"
+
 
 # ── NBA leaders category detection ───────────────────────────────────────────
 
