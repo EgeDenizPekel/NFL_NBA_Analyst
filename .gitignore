@@ -4,3 +4,6 @@ backend/routers/__pycache__
 backend/services/__pycache__
 backend/tests/__pycache__
 backend/utils/__pycache__
+
+# Agent context files
+agent.instructions.md
