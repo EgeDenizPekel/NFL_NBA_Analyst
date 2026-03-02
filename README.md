@@ -29,7 +29,7 @@ FastAPI backend
  │
  ├── SportsContextService   keyword intent detection → data fetch → context string
  │     ├── NBAService       basketball-reference scraping + nba_api fallback + ESPN
- │     └── NFLService       nfl_data_py (2024 season) + ESPN
+ │     └── NFLService       nfl_data_py (seasonal stats + rosters, joined on player_id) + ESPN
  │
  └── LLMService             injects context into system prompt → streams Ollama tokens
        └── Ollama  (llama3.1:8b, running locally)
@@ -39,7 +39,7 @@ FastAPI backend
 - **Keyword intent detection** over LLM tool-calling — Llama 3.1 8B is unreliable at structured tool-calling; keyword matching is instant and deterministic
 - **SSE over WebSocket** — streaming is unidirectional; SSE works with standard `fetch()` and needs no handshake
 - **Context injection** — current-season data is small enough to inject directly into the system prompt; no RAG pipeline needed
-- **Chart protocol** — the LLM embeds `|||CHART|||{json}|||END_CHART|||` markers; the frontend strips and renders them via Recharts
+- **Chart protocol** — the LLM embeds `CHARTJSON:{json}:ENDCHART` markers; the frontend strips and renders them via Recharts. Plain-text delimiters were chosen because the original pipe-based format (`|||`) was being split by the LLaMA tokenizer during generation
 
 ---
 
@@ -51,7 +51,7 @@ FastAPI backend
 | Charts | Recharts |
 | Backend | Python 3.11+, FastAPI, uvicorn |
 | LLM | Ollama + llama3.1:8b (local — no API key required) |
-| NBA data | `nba_api`, basketball-reference scraping (BeautifulSoup + lxml), ESPN public API |
+| NBA data | `nba_api` (player stats, league leaders), basketball-reference scraping (BeautifulSoup + lxml), ESPN public API (scoreboard, standings, news) |
 | NFL data | `nfl_data_py` (2024 season), ESPN public API |
 | Streaming | Server-Sent Events |
 | HTTP client | httpx (async) |
