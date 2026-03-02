@@ -217,13 +217,15 @@ body {
 }
 
 /* ── Charts ── */
-.message-charts { margin-top: 12px; display: flex; flex-direction: column; gap: 16px; }
+.message-charts { margin-top: 12px; display: flex; flex-direction: column; gap: 16px; width: 100%; }
 
 .chart-widget {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 12px 8px;
+  min-width: 520px;
+  width: 100%;
 }
 
 .chart-title {

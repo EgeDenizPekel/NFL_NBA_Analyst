@@ -22,7 +22,8 @@ NFL_KEYWORDS = {
     "jaguars", "titans", "broncos", "raiders", "chargers", "seahawks",
     "rams", "cardinals", "falcons", "panthers", "saints", "buccaneers",
     "bears", "lions", "vikings", "commanders", "giants", "jets", "dolphins",
-    "quarterback", "qb", "touchdown", "superbowl", "super bowl", "playoff",
+    "quarterback", "qb", "qbs", "touchdown", "superbowl", "super bowl", "playoff",
+    "passing", "rushing", "receiving", "interception", "sack",
 }
 
 # ── Intent keywords ───────────────────────────────────────────────────────────
@@ -151,6 +152,10 @@ class SportsContextService:
             return "STL"
         if any(w in message for w in ("block", "blocks")):
             return "BLK"
+        if any(w in message for w in ("shoot", "shooter", "shooters", "shooting",
+                                       "three", "3pt", "3-pt", "three point", "3 point",
+                                       "from three", "3p%", "field goal", "fg%")):
+            return "FG3M"
         return "PTS"
 
     def _detect_nfl_leaders_stat(self, message: str) -> str:

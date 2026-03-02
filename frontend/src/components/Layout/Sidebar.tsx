@@ -11,7 +11,7 @@ const QUICK_PROMPTS: Record<NonNullable<Sport>, string[]> = {
   nfl: [
     'NFL standings today',
     'NFL scores today',
-    'Top QBs in passing yards',
+    'NFL top QBs in passing yards',
     'NFL rushing leaders this season',
   ],
 }

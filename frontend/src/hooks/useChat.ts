@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Message, ChartData, Sport } from '../types/chat'
 
-const CHART_PATTERN = /\|\|\|CHART\|\|\|([\s\S]*?)\|\|\|END_CHART\|\|\|/g
+const CHART_PATTERN = /CHARTJSON:([\s\S]*?):ENDCHART/g
 
 function extractCharts(text: string): { cleanText: string; charts: ChartData[] } {
   const charts: ChartData[] = []

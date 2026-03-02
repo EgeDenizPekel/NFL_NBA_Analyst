@@ -30,10 +30,14 @@ def _load_rosters() -> list[dict]:
 
 
 def _load_seasonal_data() -> list[dict]:
-    """Load current season aggregated stats. Synchronous."""
+    """Load current season aggregated stats merged with roster names. Synchronous."""
     import nfl_data_py as nfl
-    df = nfl.import_seasonal_data([NFL_SEASON], s_type="REG")
-    df = df.dropna(subset=["player_display_name"])
+    seasonal = nfl.import_seasonal_data([NFL_SEASON], s_type="REG")
+    roster = nfl.import_seasonal_rosters(
+        [NFL_SEASON], columns=["player_id", "player_name", "position", "team"]
+    )
+    df = seasonal.merge(roster, on="player_id", how="left")
+    df = df.dropna(subset=["player_name"])
     return df.to_dict("records")
 
 
@@ -48,12 +52,12 @@ def _find_player_in_roster(name: str, roster: list[dict]) -> dict | None:
 
 
 def _find_stats_row(display_name: str, seasonal: list[dict]) -> dict | None:
-    """Find a player's seasonal stats row by display name."""
-    display_names = [r.get("player_display_name", "") for r in seasonal]
-    display_lower = [n.lower() for n in display_names]
-    matches = difflib.get_close_matches(display_name.lower(), display_lower, n=1, cutoff=0.65)
+    """Find a player's seasonal stats row by player name."""
+    names = [r.get("player_name", "") for r in seasonal]
+    names_lower = [n.lower() for n in names]
+    matches = difflib.get_close_matches(display_name.lower(), names_lower, n=1, cutoff=0.65)
     if matches:
-        return seasonal[display_lower.index(matches[0])]
+        return seasonal[names_lower.index(matches[0])]
     return None
 
 
@@ -118,14 +122,18 @@ def _format_stats_for_position(name: str, pos: str, row: dict) -> str:
 def _get_leaders_sync(stat_col: str, label: str, n: int = 10) -> str:
     """Return top-N players for a stat column. Synchronous."""
     import nfl_data_py as nfl
-    df = nfl.import_seasonal_data([NFL_SEASON], s_type="REG")
-    if stat_col not in df.columns:
+    seasonal = nfl.import_seasonal_data([NFL_SEASON], s_type="REG")
+    if stat_col not in seasonal.columns:
         return f"Stat '{stat_col}' not available."
-    df = df.dropna(subset=["player_display_name", stat_col])
+    roster = nfl.import_seasonal_rosters(
+        [NFL_SEASON], columns=["player_id", "player_name", "position", "team"]
+    )
+    df = seasonal.merge(roster, on="player_id", how="left")
+    df = df.dropna(subset=["player_name", stat_col])
     df = df[df[stat_col] > 0].sort_values(stat_col, ascending=False).head(n)
     lines = [f"NFL LEADERS — {label} ({NFL_SEASON}):"]
     for i, (_, row) in enumerate(df.iterrows(), 1):
-        name = row.get("player_display_name", "Unknown")
+        name = row.get("player_name", "Unknown")
         team = row.get("team", "")
         pos = row.get("position", "")
         val = row[stat_col]
@@ -257,25 +265,33 @@ class NFLService:
             return cached
 
         try:
-            data = await _espn_get("standings")
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(
+                    "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings"
+                )
+                r.raise_for_status()
+                data = r.json()
             children = data.get("children", [])
             lines = ["NFL STANDINGS:"]
 
             for conference in children:
                 conf_name = conference.get("name", "Conference")
                 lines.append(f"\n{conf_name}:")
-                # NFL standings nest conference > division
-                for division in conference.get("children", []):
-                    div_name = division.get("name", "Division")
-                    lines.append(f"  {div_name}:")
-                    entries = division.get("standings", {}).get("entries", [])
-                    for entry in entries:
-                        team_name = entry.get("team", {}).get("displayName", "Unknown")
-                        stats = {s["name"]: s["displayValue"] for s in entry.get("stats", [])}
-                        wins = stats.get("wins", "?")
-                        losses = stats.get("losses", "?")
-                        pct = stats.get("winPercent", "?")
-                        lines.append(f"    {team_name}: {wins}-{losses} ({pct})")
+                entries = conference.get("standings", {}).get("entries", [])
+                entries = sorted(
+                    entries,
+                    key=lambda e: int(next(
+                        (s["value"] for s in e.get("stats", []) if s["name"] == "playoffSeed"),
+                        999,
+                    )),
+                )
+                for entry in entries:
+                    team_name = entry.get("team", {}).get("displayName", "Unknown")
+                    stats = {s["name"]: s["displayValue"] for s in entry.get("stats", [])}
+                    wins = stats.get("wins", "?")
+                    losses = stats.get("losses", "?")
+                    pct = stats.get("winPercent", "?")
+                    lines.append(f"  {team_name}: {wins}-{losses} ({pct})")
 
             result = "\n".join(lines)
             cache.set("nfl_standings", result, ttl=3600)

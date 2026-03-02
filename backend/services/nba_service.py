@@ -6,7 +6,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from nba_api.stats.static import players as nba_players
-from nba_api.stats.endpoints import playercareerstats
+from nba_api.stats.endpoints import playercareerstats, leagueleaders
 
 from utils.cache import cache
 
@@ -213,7 +213,7 @@ class NBAService:
             soup = BeautifulSoup(r.text, "lxml")
             return _parse_per_game(soup)
 
-    # ── League leaders via ESPN ──────────────────────────────────────────────
+    # ── League leaders via nba_api ───────────────────────────────────────────
 
     async def get_league_leaders(self, category: str = "PTS") -> str:
         cache_key = f"nba_leaders_{category}"
@@ -222,33 +222,29 @@ class NBAService:
             return cached
 
         category_map = {
-            "PTS": ("scoring",  "Points"),
-            "REB": ("rebounds", "Rebounds"),
-            "AST": ("assists",  "Assists"),
-            "STL": ("steals",   "Steals"),
-            "BLK": ("blocks",   "Blocks"),
+            "PTS":  ("PTS",  "Points"),
+            "REB":  ("REB",  "Rebounds"),
+            "AST":  ("AST",  "Assists"),
+            "STL":  ("STL",  "Steals"),
+            "BLK":  ("BLK",  "Blocks"),
+            "FG3M": ("FG3M", "3-Pointers Made"),
         }
-        espn_slug, label = category_map.get(category, ("scoring", "Points"))
+        stat_col, label = category_map.get(category, ("PTS", "Points"))
 
         try:
-            data = await _espn_get("leaders")
-            categories = data.get("categories", [])
-            target = next(
-                (
-                    c for c in categories
-                    if espn_slug in c.get("name", c.get("displayName", "")).lower()
-                ),
-                categories[0] if categories else None,
+            ll = await asyncio.to_thread(
+                leagueleaders.LeagueLeaders,
+                per_mode48="PerGame",
+                stat_category_abbreviation=stat_col,
             )
-            if not target:
-                return "League leaders data unavailable."
+            df = ll.get_data_frames()[0]
+            if df.empty:
+                return f"No NBA leaders data available for {label}."
 
             lines = [f"NBA LEAGUE LEADERS — {label}:"]
-            for i, leader in enumerate(target.get("leaders", [])[:10], 1):
-                name = leader.get("athlete", {}).get("displayName", "Unknown")
-                team = leader.get("team", {}).get("abbreviation", "")
-                value = leader.get("displayValue", "?")
-                lines.append(f"{i}. {name} ({team}) — {value}")
+            for i, row in enumerate(df.head(10).itertuples(), 1):
+                value = getattr(row, stat_col, "?")
+                lines.append(f"{i}. {row.PLAYER} ({row.TEAM}) — {value:.1f}")
 
             result = "\n".join(lines)
             cache.set(cache_key, result, ttl=1800)
@@ -323,7 +319,7 @@ class NBAService:
         except Exception as e:
             return f"Error fetching NBA news: {e}"
 
-    # ── Standings via ESPN ───────────────────────────────────────────────────
+    # ── Standings via ESPN (v2 endpoint) ────────────────────────────────────
 
     async def get_standings(self) -> str:
         cached = cache.get("nba_standings")
@@ -331,7 +327,12 @@ class NBAService:
             return cached
 
         try:
-            data = await _espn_get("standings")
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(
+                    "https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings"
+                )
+                r.raise_for_status()
+                data = r.json()
             children = data.get("children", [])
             lines = ["NBA STANDINGS:"]
 
@@ -339,6 +340,13 @@ class NBAService:
                 conf_name = conference.get("name", "Conference")
                 lines.append(f"\n{conf_name}:")
                 entries = conference.get("standings", {}).get("entries", [])
+                entries = sorted(
+                    entries,
+                    key=lambda e: int(next(
+                        (s["value"] for s in e.get("stats", []) if s["name"] == "playoffSeed"),
+                        999,
+                    )),
+                )
                 for i, entry in enumerate(entries[:8], 1):
                     team_name = entry.get("team", {}).get("displayName", "Unknown")
                     stats = {s["name"]: s["displayValue"] for s in entry.get("stats", [])}

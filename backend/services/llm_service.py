@@ -34,8 +34,8 @@ STRICT RULES — follow these exactly:
    - A single player's stats broken into categories → bar chart
    - Trends over multiple time periods → line chart
 
-CHART FORMAT — embed inline in your response, exactly as shown:
-|||CHART|||{valid JSON}|||END_CHART|||
+CHART FORMAT — embed inline in your response, exactly as shown (no extra characters or spaces):
+CHARTJSON:{valid JSON}:ENDCHART
 
 The JSON must have these fields and no others:
   type   — "bar" | "line" | "radar"
@@ -46,15 +46,15 @@ The JSON must have these fields and no others:
 
 --- EXAMPLE 1: single-player stat breakdown (bar) ---
 User: "Break down LeBron James's stats"
-|||CHART|||{"type":"bar","title":"LeBron James — 2024-25 Season Averages","data":[{"stat":"Points","value":25.3},{"stat":"Rebounds","value":7.1},{"stat":"Assists","value":8.2},{"stat":"Steals","value":1.2},{"stat":"Blocks","value":0.6}],"xKey":"stat","yKeys":["value"]}|||END_CHART|||
+CHARTJSON:{"type":"bar","title":"LeBron James — 2024-25 Season Averages","data":[{"stat":"Points","value":25.3},{"stat":"Rebounds","value":7.1},{"stat":"Assists","value":8.2},{"stat":"Steals","value":1.2},{"stat":"Blocks","value":0.6}],"xKey":"stat","yKeys":["value"]}:ENDCHART
 
 --- EXAMPLE 2: multi-player stat comparison (bar) ---
 User: "Compare LeBron and Curry scoring stats"
-|||CHART|||{"type":"bar","title":"LeBron James vs Stephen Curry — Key Stats","data":[{"stat":"PPG","LeBron":25.3,"Curry":26.4},{"stat":"APG","LeBron":8.2,"Curry":6.1},{"stat":"RPG","LeBron":7.1,"Curry":4.5}],"xKey":"stat","yKeys":["LeBron","Curry"]}|||END_CHART|||
+CHARTJSON:{"type":"bar","title":"LeBron James vs Stephen Curry — Key Stats","data":[{"stat":"PPG","LeBron":25.3,"Curry":26.4},{"stat":"APG","LeBron":8.2,"Curry":6.1},{"stat":"RPG","LeBron":7.1,"Curry":4.5}],"xKey":"stat","yKeys":["LeBron","Curry"]}:ENDCHART
 
 --- EXAMPLE 3: multi-player radar comparison ---
 User: "Compare LeBron and Giannis across all stats"
-|||CHART|||{"type":"radar","title":"LeBron James vs Giannis Antetokounmpo","data":[{"name":"LeBron","pts":25.3,"reb":7.1,"ast":8.2,"stl":1.2,"blk":0.6},{"name":"Giannis","pts":29.8,"reb":11.5,"ast":5.8,"stl":1.1,"blk":1.2}],"xKey":"name","yKeys":["pts","reb","ast","stl","blk"]}|||END_CHART|||
+CHARTJSON:{"type":"radar","title":"LeBron James vs Giannis Antetokounmpo","data":[{"name":"LeBron","pts":25.3,"reb":7.1,"ast":8.2,"stl":1.2,"blk":0.6},{"name":"Giannis","pts":29.8,"reb":11.5,"ast":5.8,"stl":1.1,"blk":1.2}],"xKey":"name","yKeys":["pts","reb","ast","stl","blk"]}:ENDCHART
 
 Use EXACT numbers from CONTEXT DATA in chart data fields. Do not fabricate values."""
 

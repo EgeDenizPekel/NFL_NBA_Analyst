@@ -34,14 +34,16 @@ export function BarChartWidget({ chart }: Props) {
   return (
     <div className="chart-widget">
       <p className="chart-title">{title}</p>
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 64 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2e3347" vertical={false} />
           <XAxis
             dataKey={xKey}
-            tick={{ fill: '#8b92b8', fontSize: 12 }}
+            tick={{ fill: '#8b92b8', fontSize: 12, angle: -35, textAnchor: 'end', dy: 4 }}
             axisLine={{ stroke: '#2e3347' }}
             tickLine={false}
+            interval={0}
+            height={70}
           />
           <YAxis
             tick={{ fill: '#8b92b8', fontSize: 12 }}
