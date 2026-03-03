@@ -6,6 +6,12 @@ Built as a graduate class project (GRAD-5900, University of Connecticut) and ext
 
 ---
 
+## Screenshot
+
+![Sports Analyst chatbot showing NBA league leaders in points with a bar chart and Luka Doncic stats](screenshot.png)
+
+---
+
 ## What It Does
 
 - **Chat interface** — ask anything: *"How is Jayson Tatum playing this season?"*, *"Compare Patrick Mahomes and Josh Allen"*, *"NBA standings today"*
